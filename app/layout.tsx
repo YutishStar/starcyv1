@@ -5,11 +5,17 @@ import "./globals.css";
 
 import { cn } from "@/utils";
 import Script from "next/script";
+import { config } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Hume AI visualizer",
   description: " Hume AI's Empathic Voice Interface",
 };
+
+// Validate config ID at runtime
+if (!config.humeConfigId) {
+  console.error("Hume Config ID is not set!");
+}
 
 export default function RootLayout({
   children,

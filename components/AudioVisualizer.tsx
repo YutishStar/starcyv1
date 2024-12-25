@@ -90,6 +90,11 @@ export default function AudioVisualizer({
     }
   }
 
+  useEffect(() => {
+    console.log("Config ID:", process.env.NEXT_PUBLIC_HUME_CONFIG_ID);
+    console.log("Status:", status.value);
+  }, [status.value]);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-white">
       <div className="relative  h-full w-full">
