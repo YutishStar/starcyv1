@@ -10,35 +10,40 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { CalendarIcon } from 'lucide-react'
 import Image from 'next/image'
+import { supabase } from '@/lib/supabaseClient'
+import { useUser } from "@clerk/nextjs"
+import { redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { submitOnboardingData } from "./actions"
 
 const formSteps = [
   {
     title: "Personal Information",
-    fields: ["name", "age", "dateOfBirth", "gender", "location", "timeZone"]
+    fields: ["name", "age", "date_of_birth", "gender", "location", "time_zone"]
   },
   {
     title: "Preferences and Interests",
-    fields: ["hobbies", "favoriteContent", "learningGoals", "languages"]
+    fields: ["hobbies", "favorite_content", "learning_goals", "languages"]
   },
   {
     title: "Lifestyle and Daily Habits",
-    fields: ["dailyRoutine", "dietaryPreferences", "exerciseHabits", "sleepPatterns", "caffeineConsumption"]
+    fields: ["daily_routine", "dietary_preferences", "exercise_habits", "sleep_patterns", "caffeine_consumption"]
   },
   {
     title: "Professional Information",
-    fields: ["profession", "workStyle", "careerGoals", "productivityPreferences"]
+    fields: ["profession", "work_style", "career_goals", "productivity_preferences"]
   },
   {
     title: "Personal Goals and Aspirations",
-    fields: ["lifeGoals", "learningPriorities", "motivators"]
+    fields: ["life_goals", "learning_priorities", "motivators"]
   },
   {
     title: "Health and Wellness",
-    fields: ["healthGoals", "allergies", "wellnessPractices"]
+    fields: ["health_goals", "allergies", "wellness_practices"]
   },
   {
     title: "Relationship Dynamics",
-    fields: ["relationshipStatus", "familyDetails", "socialEngagement"]
+    fields: ["relationship_status", "family_details", "social_engagement"]
   }
 ];
 
@@ -107,46 +112,69 @@ function DatePicker({ date, onChange }: DatePickerProps) {
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0)
-  const [formData, setFormData] = useState<{ [key: string]: string }>({
+  const router = useRouter()
+  const [formData, setFormData] = useState<DbOnboarding>({
+    // user_id: '',
     name: '',
-    age: '',
-    dateOfBirth: '',
+    age: undefined,
+    date_of_birth: null,
     gender: '',
     location: '',
-    timeZone: '',
+    time_zone: '',
     hobbies: '',
-    favoriteContent: '',
-    learningGoals: '',
+    favorite_content: '',
+    learning_goals: '',
     languages: '',
-    dailyRoutine: '',
-    dietaryPreferences: '',
-    exerciseHabits: '',
-    sleepPatterns: '',
-    caffeineConsumption: '',
+    daily_routine: '',
+    dietary_preferences: '',
+    exercise_habits: '',
+    sleep_patterns: '',
+    caffeine_consumption: '',
     profession: '',
-    workStyle: '',
-    careerGoals: '',
-    productivityPreferences: '',
-    lifeGoals: '',
-    learningPriorities: '',
+    work_style: '',
+    career_goals: '',
+    productivity_preferences: '',
+    life_goals: '',
+    learning_priorities: '',
     motivators: '',
-    healthGoals: '',
+    health_goals: '',
     allergies: '',
-    wellnessPractices: '',
-    relationshipStatus: '',
-    familyDetails: '',
-    socialEngagement: ''
-  })
+    wellness_practices: '',
+    relationship_status: '',
+    family_details: '',
+    social_engagement: '',
+    // created_at: '',
+    // updated_at: '',
+    // email: '',
+    is_onboarded: false,
+  });
+  
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof DbOnboarding, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
-
-  const handleNext = () => {
+  const {user} = useUser();
+  const handleNext = async () => {
     if (currentStep < formSteps.length - 1) {
       setCurrentStep(currentStep + 1)
     } else {
       console.log('Form submitted:', formData)
+      // Replace with actual user ID
+      const userId = user?.id;
+      const userEmail = user?.emailAddresses[0].emailAddress; // Replace with actual user email
+      console.log('User ID:', userId, 'User Email:', userEmail)
+
+      const res = await submitOnboardingData(formData)
+      console.log('Response:', res)
+    if (res?.message) {
+      // Reloads the user's data from the Clerk API
+      console.log('User data updated:', res.message)
+      await user?.reload()
+      router.push('/')
+    }
+    if (res?.error) {
+      // setError(res?.error)
+    }
     }
   }
 
@@ -156,9 +184,13 @@ export default function OnboardingPage() {
     }
   }
 
-  const renderField = (field: string) => {
+  const formatFieldName = (field: string) => {
+    return field.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  const renderField = (field: keyof DbOnboarding) => {
     switch (field) {
-      case 'dateOfBirth':
+      case 'date_of_birth':
         return (
           <DatePicker
             date={formData[field] ? new Date(formData[field]) : undefined}
@@ -168,7 +200,7 @@ export default function OnboardingPage() {
       case 'gender':
         return (
           <select
-            value={formData[field]}
+            value={formData[field] as string | number | readonly string[] | undefined}
             onChange={(e) => handleInputChange(field, e.target.value)}
             className="w-full h-8 px-3 text-xs bg-background rounded-md border border-input
               focus:outline-none focus:ring-1 focus:ring-ring
@@ -181,18 +213,18 @@ export default function OnboardingPage() {
             <option value="prefer-not-to-say">Prefer not to say</option>
           </select>
         )
-      case 'workStyle':
-      case 'relationshipStatus':
+      case 'work_style':
+      case 'relationship_status':
         return (
           <select
-            value={formData[field]}
+            value={formData[field] as string | number | readonly string[] | undefined}
             onChange={(e) => handleInputChange(field, e.target.value)}
             className="w-full h-8 px-3 text-xs bg-background rounded-md border border-input
               focus:outline-none focus:ring-1 focus:ring-ring
               hover:border-muted-foreground transition-colors"
           >
-            <option value="" disabled>Select {field.replace(/([A-Z])/g, ' $1').toLowerCase()}</option>
-            {field === 'workStyle' ? (
+            <option value="" disabled>Select {formatFieldName(field)}</option>
+            {field === 'work_style' ? (
               <>
                 <option value="freelancer">Freelancer</option>
                 <option value="entrepreneur">Entrepreneur</option>
@@ -213,8 +245,8 @@ export default function OnboardingPage() {
       default:
         return (
           <Input
-            placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
-            value={formData[field] || ''}
+            placeholder={`Enter ${formatFieldName(field)}`}
+            value={formData[field] as string | number | readonly string[] | undefined}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(field, e.target.value)}
             className="w-full h-8 px-3 text-xs rounded-md border-input
               placeholder:text-muted-foreground
@@ -253,9 +285,9 @@ export default function OnboardingPage() {
             <div key={field} className="flex flex-col gap-1">
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-foreground mb-1.5 pl-0.5">
-                  {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
+                  {formatFieldName(field)}
                 </label>
-                {renderField(field)}
+                {renderField(field as keyof DbOnboarding)}
               </div>
             </div>
           ))}
@@ -283,4 +315,3 @@ export default function OnboardingPage() {
     </div>
   )
 }
-

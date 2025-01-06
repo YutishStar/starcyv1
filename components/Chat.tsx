@@ -79,14 +79,46 @@
 
 import { useEffect, useState, useRef } from "react";
 import AudioVisualizer from "../components/AudioVisualizer";
-import { AudioOutputMessage, useVoice, VoiceProvider } from "@humeai/voice-react";
+import {
+  AudioOutputMessage,
+  useVoice,
+  VoiceProvider,
+} from "@humeai/voice-react";
 import CustomCursor from "@/app/CustomCursor";
 import { Mic } from "lucide-react";
+import {
+  getChatGroupId,
+  getUserById,
+  onMessageHandler,
+} from "@/utils/handleOnMessage";
+import { useUser } from "@clerk/nextjs";
+import { chat } from "hume/api/resources/empathicVoice";
+import { getContext } from "@/utils/chatDetails";
 
 export default function Chat({ accessToken }: { accessToken: string }) {
   const configId = process.env["NEXT_PUBLIC_HUME_CONFIG_ID"];
   const [audioData, setAudioData] = useState<number[]>([0, 0, 0, 0, 0]); // Initialize with 5 bars
   const animationFrameRef = useRef<number | null>(null);
+  const [chatGroupId, setChatGroupId] = useState<string>("");
+  const { user } = useUser();
+  const [context, setContext] = useState<any>({});
+  useEffect(() => {
+    const fetchUser = async () => {
+      const userData = await getUserById(user?.id ?? "");
+      setContext(userData);
+    };
+    if(user)
+    fetchUser();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchChatGroupId = async () => {
+      const chatGroupId = await getChatGroupId(user?.id ?? "");
+      console.log("chatGroupId", chatGroupId);
+      setChatGroupId(chatGroupId);
+    };
+    fetchChatGroupId();
+  }, [user]);
 
   const processAudioData = (audioArray: Uint8Array) => {
     // Divide the audio data into 5 chunks and compute average amplitude
@@ -94,7 +126,8 @@ export default function Chat({ accessToken }: { accessToken: string }) {
     const amplitudes = [];
     for (let i = 0; i < 5; i++) {
       const chunk = audioArray.slice(i * chunkSize, (i + 1) * chunkSize);
-      const avgAmplitude = chunk.reduce((sum, value) => sum + value, 0) / chunk.length;
+      const avgAmplitude =
+        chunk.reduce((sum, value) => sum + value, 0) / chunk.length;
       amplitudes.push(avgAmplitude);
     }
 
@@ -125,21 +158,32 @@ export default function Chat({ accessToken }: { accessToken: string }) {
 
     animationFrameRef.current = requestAnimationFrame(animate);
     return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
     };
   }, []);
+
+  if (chatGroupId === "") {
+    return <div>Loading...</div>;
+  }
 
   return (
     <VoiceProvider
       auth={{ type: "accessToken", value: accessToken }}
       configId={configId}
-      onAudioReceived={(message: AudioOutputMessage) => handleAudioReceived(message)}
+      resumedChatGroupId={chatGroupId === "no_chat" ? undefined : chatGroupId}
+      onMessage={async (message) =>
+        await onMessageHandler(message, user?.id ?? "")
+      }
+      sessionSettings={{ type: "session_settings", context: getContext(user)}}
+      onAudioReceived={(message: AudioOutputMessage) =>
+        handleAudioReceived(message)
+      }
     >
       {/* <div className="p-4"> */}
-        
-        <AudioVisualizer audioData={audioData} />
+
+      <AudioVisualizer audioData={audioData} />
       {/* </div> */}
-      
     </VoiceProvider>
   );
 }

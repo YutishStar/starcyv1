@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-// import { GeistSans } from "geist/font/sans";
-// import { GeistMono } from "geist/font/mono";
+import { Inter } from 'next/font/google'
 import "./globals.css";
 
 import { cn } from "@/utils";
@@ -18,23 +17,28 @@ if (!config.humeConfigId) {
   console.error("Hume Config ID is not set!");
 }
 
+const inter = Inter({ subsets: ['latin'] })
+
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+       afterSignOutUrl="/sign-in"
+    >
       <html lang="en">
         <body
           className={cn(
 
-            "flex flex-col min-h-screen"
+            "flex flex-col min-h-screen", inter.className
           )}
         >
 
           {children}
-          <Script src="./cursor.js" strategy="afterInteractive"/>
+          
         </body>
       </html>
     </ClerkProvider>
