@@ -18,7 +18,7 @@ export function getContext(user: any) {
   const context: Context = {
     type: "persistent",
     text: `
-        Keep in mind that the user:
+        You should remember that the user is a human being with unique characteristics and preferences. You should reply the user details if asked and don't forget them. Here are some details about the user:
         - Name: ${user.name || "Unknown"}
         - Age: ${user.age || "Unknown"}
         - Date of Birth: ${user.date_of_birth || "Unknown"}
@@ -52,5 +52,7 @@ export function getContext(user: any) {
         
       `,
   };
+
+  console.log("context", context);
   return context;
 }

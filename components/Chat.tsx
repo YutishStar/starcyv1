@@ -94,18 +94,20 @@ import {
 import { useUser } from "@clerk/nextjs";
 import { chat } from "hume/api/resources/empathicVoice";
 import { getContext } from "@/utils/chatDetails";
+import { useRouter } from "next/navigation";
 
 export default function Chat({ accessToken }: { accessToken: string }) {
   const configId = process.env["NEXT_PUBLIC_HUME_CONFIG_ID"];
   const [audioData, setAudioData] = useState<number[]>([0, 0, 0, 0, 0]); // Initialize with 5 bars
   const animationFrameRef = useRef<number | null>(null);
   const [chatGroupId, setChatGroupId] = useState<string>("");
-  const { user } = useUser();
-  const [context, setContext] = useState<any>({});
+  const { user, isLoaded, isSignedIn } = useUser();
+  const router = useRouter();
+  const [context, setContext] = useState<any>("");
   useEffect(() => {
     const fetchUser = async () => {
       const userData = await getUserById(user?.id ?? "");
-      setContext(userData);
+      setContext(getContext(userData));
     };
     if(user)
     fetchUser();
@@ -163,8 +165,12 @@ export default function Chat({ accessToken }: { accessToken: string }) {
     };
   }, []);
 
-  if (chatGroupId === "") {
+  if (chatGroupId === "" || !isLoaded) {
     return <div>Loading...</div>;
+  }
+
+  if(isLoaded && !isSignedIn) {
+    router.push("/sign-in");
   }
 
   return (
@@ -175,7 +181,8 @@ export default function Chat({ accessToken }: { accessToken: string }) {
       onMessage={async (message) =>
         await onMessageHandler(message, user?.id ?? "")
       }
-      sessionSettings={{ type: "session_settings", context: getContext(user)}}
+      queryParams={{context: context}}
+      sessionSettings={{ type: "session_settings", context: context}}
       onAudioReceived={(message: AudioOutputMessage) =>
         handleAudioReceived(message)
       }
