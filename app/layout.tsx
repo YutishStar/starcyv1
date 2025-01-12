@@ -6,10 +6,11 @@ import { cn } from "@/utils";
 import Script from "next/script";
 import { config } from "@/lib/config";
 import { ClerkProvider } from '@clerk/nextjs'
+import Head from 'next/head';
 
 export const metadata: Metadata = {
-  title: "Hume AI visualizer",
-  description: " Hume AI's Empathic Voice Interface",
+  title: "StarCyv1",
+  description: "AI that feels Human",
 };
 
 // Validate config ID at runtime
@@ -36,9 +37,11 @@ export default function RootLayout({
             "flex flex-col min-h-screen", inter.className
           )}
         >
-
+          <Head>
+            <link rel="icon" href="/favicon.ico" />
+            <title>StarCy</title>
+          </Head>
           {children}
-          
         </body>
       </html>
     </ClerkProvider>

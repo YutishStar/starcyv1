@@ -78,7 +78,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import AudioVisualizer from "../components/AudioVisualizer";
+import AudioVisualizer from "./AudioVisualizer";
 import {
   AudioOutputMessage,
   useVoice,

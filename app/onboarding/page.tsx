@@ -23,15 +23,15 @@ const formSteps = [
   },
   {
     title: "Preferences and Interests",
-    fields: ["hobbies", "favorite_content", "learning_goals", "languages"]
+    fields: ["hobbies", "learning_goals", "languages"]
   },
   {
     title: "Lifestyle and Daily Habits",
-    fields: ["daily_routine", "dietary_preferences", "exercise_habits", "sleep_patterns", "caffeine_consumption"]
+    fields: ["daily_routine", "exercise_habits", "caffeine_consumption"]
   },
   {
     title: "Professional Information",
-    fields: ["profession", "work_style", "career_goals", "productivity_preferences"]
+    fields: ["profession", "work_style", "career_goals"]
   },
   {
     title: "Personal Goals and Aspirations",
@@ -53,68 +53,138 @@ interface DatePickerProps {
 }
 
 function DatePicker({ date, onChange }: DatePickerProps) {
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const currentYear = new Date().getFullYear();
+  const defaultYear = 2000;
+  const defaultMonth = 0;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           className={cn(
-            "w-full h-8 px-3 text-xs justify-start font-normal",
-            !date && "text-muted-foreground"
+            "w-full h-8 px-3 text-xs justify-start font-normal bg-white",
+            !date && "text-muted-foreground hover:bg-gray-50"
           )}
         >
-          <CalendarIcon className="mr-2 h-3 w-3" />
+          <CalendarIcon className="mr-2 h-3 w-3 text-gray-500" />
           {date ? format(date, "MMMM d, yyyy") : "Select your date of birth"}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={onChange}
-          initialFocus
-          className="rounded-md border shadow-sm bg-white"
-          classNames={{
-            months: "space-y-4 px-3",
-            month: "space-y-4",
-            caption: "flex justify-center pt-1 relative items-center",
-            caption_label: "text-sm font-medium",
-            nav: "space-x-1 flex items-center",
-            nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-            nav_button_previous: "absolute left-1",
-            nav_button_next: "absolute right-1",
-            table: "w-full border-collapse space-y-1",
-            head_row: "flex",
-            head_cell: "text-muted-foreground rounded-md w-8 font-normal text-xs",
-            row: "flex w-full mt-2",
-            cell: cn(
-              "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent",
-              "first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
-            ),
-            day: cn(
-              "h-7 w-7 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground",
-              "rounded-md text-xs"
-            ),
-            day_selected:
-              "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-            day_today: "bg-accent text-accent-foreground",
-            day_outside: "text-muted-foreground opacity-50",
-            day_disabled: "text-muted-foreground opacity-50",
-            day_range_middle:
-              "aria-selected:bg-accent aria-selected:text-accent-foreground",
-            day_hidden: "invisible",
-          }}
-        />
+      <PopoverContent className="w-auto p-3" align="start">
+        <div className="flex gap-2">
+          {/* Year Dropdown */}
+          <select
+            value={date ? date.getFullYear() : defaultYear}
+            onChange={(e) => {
+              const newDate = date ? new Date(date) : new Date(defaultYear, defaultMonth, 1);
+              newDate.setFullYear(parseInt(e.target.value));
+              onChange(newDate);
+            }}
+            className="flex-1 h-8 px-2 text-sm rounded-md border border-input bg-white
+              focus:outline-none focus:ring-1 focus:ring-black hover:border-gray-400"
+          >
+            {Array.from({ length: currentYear - 1900 + 1 }, (_, i) => (
+              <option key={1900 + i} value={1900 + i}>
+                {1900 + i}
+              </option>
+            )).reverse()}
+          </select>
+
+          {/* Month Dropdown */}
+          <select
+            value={date ? date.getMonth() : defaultMonth}
+            onChange={(e) => {
+              const newDate = date ? new Date(date) : new Date(defaultYear, defaultMonth, 1);
+              newDate.setMonth(parseInt(e.target.value));
+              // Adjust day if it exceeds the days in the new month
+              const daysInNewMonth = getDaysInMonth(newDate.getFullYear(), parseInt(e.target.value));
+              if (newDate.getDate() > daysInNewMonth) {
+                newDate.setDate(daysInNewMonth);
+              }
+              onChange(newDate);
+            }}
+            className="flex-1 h-8 px-2 text-sm rounded-md border border-input bg-white
+              focus:outline-none focus:ring-1 focus:ring-black hover:border-gray-400"
+          >
+            {[
+              "January", "February", "March", "April", "May", "June",
+              "July", "August", "September", "October", "November", "December"
+            ].map((month, index) => (
+              <option key={month} value={index}>
+                {month}
+              </option>
+            ))}
+          </select>
+
+          {/* Day Dropdown */}
+          <select
+            value={date ? date.getDate() : 1}
+            onChange={(e) => {
+              const newDate = date ? new Date(date) : new Date(defaultYear, defaultMonth, 1);
+              newDate.setDate(parseInt(e.target.value));
+              onChange(newDate);
+            }}
+            className="flex-1 h-8 px-2 text-sm rounded-md border border-input bg-white
+              focus:outline-none focus:ring-1 focus:ring-black hover:border-gray-400"
+          >
+            {Array.from(
+              { length: date 
+                ? getDaysInMonth(date.getFullYear(), date.getMonth())
+                : getDaysInMonth(defaultYear, defaultMonth) 
+              }, 
+              (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}
+                </option>
+              )
+            )}
+          </select>
+        </div>
       </PopoverContent>
     </Popover>
-  )
+  );
+}
+
+async function getTimezoneFromCity(city: string): Promise<string> {
+  try {
+    // First, get coordinates from city name using Google Geocoding API
+    const geocodeResponse = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(city)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+    );
+    const geocodeData = await geocodeResponse.json();
+
+    if (geocodeData.results && geocodeData.results.length > 0) {
+      const { lat, lng } = geocodeData.results[0].geometry.location;
+      
+      // Then, get timezone using coordinates
+      const timestamp = Math.floor(Date.now() / 1000);
+      const timezoneResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+      );
+      const timezoneData = await timezoneResponse.json();
+
+      if (timezoneData.timeZoneId) {
+        return timezoneData.timeZoneId;
+      }
+    }
+    
+    // Fallback to browser's timezone if API calls fail
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch (error) {
+    console.error('Error fetching timezone:', error);
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
 }
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const router = useRouter()
   const [formData, setFormData] = useState<DbOnboarding>({
-    // user_id: '',
     name: '',
     age: undefined,
     date_of_birth: null,
@@ -122,18 +192,14 @@ export default function OnboardingPage() {
     location: '',
     time_zone: '',
     hobbies: '',
-    favorite_content: '',
     learning_goals: '',
     languages: '',
     daily_routine: '',
-    dietary_preferences: '',
     exercise_habits: '',
-    sleep_patterns: '',
     caffeine_consumption: '',
     profession: '',
     work_style: '',
     career_goals: '',
-    productivity_preferences: '',
     life_goals: '',
     learning_priorities: '',
     motivators: '',
@@ -143,9 +209,6 @@ export default function OnboardingPage() {
     relationship_status: '',
     family_details: '',
     social_engagement: '',
-    // created_at: '',
-    // updated_at: '',
-    // email: '',
     is_onboarded: false,
   });
   
@@ -210,8 +273,20 @@ export default function OnboardingPage() {
             <option value="male">Male</option>
             <option value="female">Female</option>
             <option value="other">Other</option>
-            <option value="prefer-not-to-say">Prefer not to say</option>
           </select>
+        )
+      case 'age':
+        return (
+          <Input
+            type="number"
+            placeholder={`Enter ${formatFieldName(field)}`}
+            value={formData[field] as string | number | readonly string[] | undefined}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(field, e.target.value)}
+            className="w-full h-8 px-3 text-xs rounded-md border-input
+              placeholder:text-muted-foreground
+              focus-visible:ring-1 focus-visible:ring-ring
+              hover:border-muted-foreground transition-colors"
+          />
         )
       case 'work_style':
       case 'relationship_status':
@@ -242,6 +317,39 @@ export default function OnboardingPage() {
             )}
           </select>
         )
+      case 'location':
+        return (
+          <Input
+            placeholder="Enter your city"
+            value={formData[field] as string}
+            onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+              const city = e.target.value;
+              handleInputChange(field, city);
+              
+              // Get and set timezone when city changes
+              if (city.length > 2) {
+                const timezone = await getTimezoneFromCity(city);
+                handleInputChange('time_zone', timezone);
+              }
+            }}
+            className="w-full h-8 px-3 text-xs rounded-md border-input
+              placeholder:text-muted-foreground
+              focus-visible:ring-1 focus-visible:ring-ring
+              hover:border-muted-foreground transition-colors"
+          />
+        );
+      case 'time_zone':
+        return (
+          <Input
+            placeholder="Timezone will be set automatically"
+            value={formData[field] as string}
+            disabled
+            className="w-full h-8 px-3 text-xs rounded-md border-input
+              placeholder:text-muted-foreground bg-gray-50
+              focus-visible:ring-1 focus-visible:ring-ring
+              hover:border-muted-foreground transition-colors"
+          />
+        );
       default:
         return (
           <Input
@@ -273,7 +381,7 @@ export default function OnboardingPage() {
             </div>
           </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">Tell StarCy About You!</h1>
+            <h1 className="text-2xl font-semibold">Make Your first Artificially Intelligent Friend, StarCy!</h1>
             <p className="text-sm text-muted-foreground">
               Step {currentStep + 1} of {formSteps.length}: {formSteps[currentStep].title}
             </p>
